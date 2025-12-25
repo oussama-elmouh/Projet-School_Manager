@@ -4,7 +4,6 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
-// ajouter automatiquement le token s'il est dans localStorage
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("auth_token");
   if (token) {
