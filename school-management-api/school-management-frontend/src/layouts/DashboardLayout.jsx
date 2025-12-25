@@ -4,10 +4,14 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 
 export default function DashboardLayout() {
 
-  
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("auth_user") || "{}");
   const menus = getMenusByRole(user.role); // fonction qui retourne les liens selon rôle
-
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+    navigate("/login");
+  };
   return (
     <div className="flex h-screen bg-gray-100">
       <aside className="w-64 bg-gradient-to-b from-indigo-600 to-indigo-800 text-white p-6">
@@ -19,7 +23,10 @@ export default function DashboardLayout() {
             </Link>
           ))}
         </nav>
-        <button className="w-full py-2 bg-red-500 rounded-lg hover:bg-red-600">
+        <button
+          onClick={handleLogout}
+          className="w-full py-2 bg-red-500 rounded-lg hover:bg-red-600"
+        >
           Déconnexion
         </button>
       </aside>
