@@ -246,11 +246,32 @@ Authentication is handled using **Laravel Sanctum** with token-based access.
 - Deploy the build folder on Netlify, Vercel or any static hosting
     
 - Set `VITE_API_BASE_URL` to the public API URL
-    
+
+
+
+   Récapitulatif : ce qu'on a fait jusqu'ici
+- Authentification complète
+
+Login / Register avec Tailwind
+
+Token Sanctum + localStorage
+
+Dashboard par rôle (Admin/Prof/Élève)
+
+Layout responsive avec sidebar dynamique
+
+-CRUD Classes complet
+
+Liste, Ajouter, Modifier, Supprimer
+
+Formulaire inline + gestion erreurs 422
+
+Table responsive Tailwind + boutons alignés
+
+PATCH au lieu de PUT + Policy autorisée
 
 ---
 
-## License
 
 This project is intended for **academic and educational purposes**.  
 You may add an open-source license (e.g. MIT) if you plan to publish or reuse the code.
