@@ -6,6 +6,7 @@ export default function TeachersPage() {
   const [classes, setClasses] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState({
     user_id: "",
     email: "",
@@ -64,35 +65,75 @@ export default function TeachersPage() {
     setForm({ ...form, classes: newClasses });
   };
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    console.log("Données envoyées :", form);
-const { data } = await method(endpoint, form);
-    try {
-      const endpoint = editingId ? `/teachers/${editingId}` : "/teachers";
-      const method = editingId ? api.patch : api.post;
-      const { data } = await method(endpoint, form);
-      const newTeacher = data.data || data;
+const handleCreate = async (e) => {
+  e.preventDefault();
+  setSaving(true);
+  try {
+    const payload = {
+      user_id: form.user_id,
+      email: form.email,
+      specialization: form.specialization,
+      phone: form.phone,
+      bio: form.bio,
+      status: form.status
+    };
 
-      if (editingId) {
-        setTeachers(prev => prev.map(t => t.id === editingId ? newTeacher : t));
-        setEditingId(null);
-      } else {
-        setTeachers(prev => [newTeacher, ...prev]);
+    const { data } = editingId 
+      ? await api.patch(`/teachers/${editingId}`, payload)
+      : await api.post('/teachers', payload);
+
+    let newTeacher = data.data || data;
+
+    // ✅ Assigner classes
+    if (form.classes.length > 0) {
+      for (const cls of form.classes) {
+        if (cls.class_id && cls.subject) {
+          try {
+            await api.post(`/teachers/${newTeacher.id}/assign-class`, {
+              class_id: cls.class_id,
+              subject: cls.subject
+            });
+          } catch (err) {
+            console.warn(`Classe ${cls.class_id} non assignée:`, err.response?.data?.message);
+          }
+        }
       }
 
-      setForm({
-        user_id: "", email: "", specialization: "", phone: "",
-        bio: "", status: "ACTIVE", classes: []
-      });
-    } catch (err) {
-      const errors = err.response?.data?.errors;
-      alert(errors ? Object.values(errors).flat().join('\n') : "Erreur");
-    } finally {
-      setSaving(false);
+      // ✅ RAFRAÎCHIR données du prof après assignation
+      const { data: refreshedData } = await api.get(`/teachers/${newTeacher.id}`);
+      newTeacher = refreshedData.data || refreshedData;
     }
-  };
+
+    // ✅ UPDATE le tableau avec données fraîches
+    if (editingId) {
+      setTeachers(prev => prev.map(t => t.id === editingId ? newTeacher : t));
+      setEditingId(null);
+    } else {
+      setTeachers(prev => [newTeacher, ...prev]);
+    }
+
+    // Reset form
+    setForm({
+      user_id: "", email: "", specialization: "", phone: "",
+      bio: "", status: "ACTIVE", classes: []
+    });
+
+    // ✅ Optionnel: recharger TOUT le tableau
+     await fetchData();
+ alert('✅ Professeur ' + (editingId ? 'modifié' : 'ajouté') + ' avec succès!');
+  } catch (err) {
+    const errors = err.response?.data?.errors;
+    const message = errors 
+      ? Object.values(errors).flat().join('\n') 
+      : err.response?.data?.message || err.message || "Erreur serveur";
+    alert(message);
+    console.error('Erreur handleCreate:', err);
+  } finally {
+    setSaving(false);
+  }
+};
+
+
 
   const handleEdit = (teacher) => {
     setForm({
@@ -116,7 +157,18 @@ const { data } = await method(endpoint, form);
       alert("Erreur suppression");
     }
   };
-
+const filteredTeachers = teachers.filter((teacher) => {
+  const search = searchTerm.toLowerCase();
+  
+  // On récupère le nom de l'utilisateur si l'objet teacher.user existe
+  const userName = teacher.user?.name || "";
+  
+  return (
+    (teacher.email || "").toLowerCase().includes(search) ||
+    (teacher.specialization || "").toLowerCase().includes(search) ||
+    userName.toLowerCase().includes(search)
+  );
+});
   if (loading) return <div className="p-6">Chargement...</div>;
 
   return (
@@ -294,7 +346,18 @@ const { data } = await method(endpoint, form);
           )}
         </div>
       </form>
-
+<div className="mb-4 relative max-w-md">
+  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+    
+  </span>
+  <input
+    type="text"
+    placeholder="Rechercher par nom, email ou spécialité..."
+    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+  />
+</div>
       {/* TABLE */}
       <div className="bg-white rounded-lg shadow-md border overflow-hidden">
         <table className="w-full">
@@ -315,14 +378,22 @@ const { data } = await method(endpoint, form);
                 <td className="px-6 py-4 text-sm text-gray-900">{teacher.email}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">{teacher.specialization}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">
-                  <div className="flex flex-wrap gap-1">
-                    {teacher.classes?.map(c => (
-                      <span key={c.id} className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                        {c.name} ({c.pivot?.subject})
-                      </span>
-                    )) || <span className="text-gray-400">-</span>}
-                  </div>
-                </td>
+  <div className="flex flex-wrap gap-1">
+    {Array.isArray(teacher.classes) && teacher.classes.length > 0 ? (
+      teacher.classes.map(c => (
+        <span 
+          key={`${teacher.id}-${c.id}`}
+          className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded whitespace-nowrap"
+        >
+          {c.name} ({c.pivot?.subject || 'N/A'})
+        </span>
+      ))
+    ) : (
+      <span className="text-gray-400">Aucune classe</span>
+    )}
+  </div>
+</td>
+
                 <td className="px-6 py-4 text-sm">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
                     teacher.status === 'ACTIVE' 

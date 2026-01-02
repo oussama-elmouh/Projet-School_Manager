@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
+import SuccessModal from "../components/SuccessModal";
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
@@ -21,6 +22,13 @@ export default function StudentsPage() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // ✅ STATE POUR MODAL SUCCESS
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -60,10 +68,25 @@ export default function StudentsPage() {
       if (editingId) {
         setStudents(prev => prev.map(s => s.id === editingId ? newStudent : s));
         setEditingId(null);
+        
+        // ✅ AFFICHER MODAL SUCCESS (MODIFICATION)
+        setSuccessModal({
+          isOpen: true,
+          title: '✅ Élève modifié!',
+          message: `${newStudent.full_name || newStudent.first_name + ' ' + newStudent.last_name} a été modifié avec succès.`
+        });
       } else {
         setStudents(prev => [newStudent, ...prev]);
+        
+        // ✅ AFFICHER MODAL SUCCESS (AJOUT)
+        setSuccessModal({
+          isOpen: true,
+          title: '✅ Élève ajouté!',
+          message: `${newStudent.full_name || newStudent.first_name + ' ' + newStudent.last_name} a été ajouté à la base de données.`
+        });
       }
 
+      // Reset form
       setForm({
         user_id: "", matricule: "", first_name: "", last_name: "",
         date_of_birth: "", gender: "", address: "", phone: "",
@@ -77,27 +100,39 @@ export default function StudentsPage() {
     }
   };
 
-  const handleEdit = (student) => {
-    setForm({
-      user_id: student.user_id || "",
-      matricule: student.matricule || "",
-      first_name: student.first_name || "",
-      last_name: student.last_name || "",
-      date_of_birth: student.date_of_birth || "",
-      gender: student.gender || "",
-      address: student.address || "",
-      phone: student.phone || "",
-      medical_info: student.medical_info || "",
-      class_id: student.class_id || ""
-    });
-    setEditingId(student.id);
-  };
+ const handleEdit = (student) => {
+  setForm({
+    // ✅ Si user est un objet, prendre l'ID
+    user_id: student.user?.id ? String(student.user.id) : (student.user_id ? String(student.user_id) : ""),
+    matricule: student.matricule || "",
+    first_name: student.first_name || "",
+    last_name: student.last_name || "",
+    date_of_birth: student.date_of_birth || "",
+    gender: student.gender || "",
+    address: student.address || "",
+    phone: student.phone || "",
+    medical_info: student.medical_info || "",
+    // ✅ Si class est un objet, prendre l'ID
+    class_id: student.class?.id ? String(student.class.id) : (student.class_id ? String(student.class_id) : "")
+  });
+  setEditingId(student.id);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer cet élève ?")) return;
     try {
+      const deletedStudent = students.find(s => s.id === id);
       await api.delete(`/students/${id}`);
       setStudents(prev => prev.filter(s => s.id !== id));
+      
+      // ✅ AFFICHER MODAL SUCCESS (SUPPRESSION)
+      setSuccessModal({
+        isOpen: true,
+        title: '✅ Élève supprimé!',
+        message: `${deletedStudent.full_name || deletedStudent.first_name + ' ' + deletedStudent.last_name} a été supprimé de la base de données.`
+      });
     } catch (err) {
       alert("Erreur suppression");
     }
@@ -105,31 +140,34 @@ export default function StudentsPage() {
 
   if (loading) return <div className="p-6">Chargement...</div>;
 
+  const filteredStudents = students.filter((student) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      student.matricule?.toLowerCase().includes(search) ||
+      student.first_name?.toLowerCase().includes(search) ||
+      student.last_name?.toLowerCase().includes(search) ||
+      student.full_name?.toLowerCase().includes(search)
+    );
+  });
 
-
-
-const filteredStudents = students.filter((student) => {
-  const search = searchTerm.toLowerCase();
-  return (
-    student.matricule?.toLowerCase().includes(search) ||
-    student.first_name?.toLowerCase().includes(search) ||
-    student.last_name?.toLowerCase().includes(search) ||
-    student.full_name?.toLowerCase().includes(search)
-  );
-});
-
- 
- 
   return (
     <div className="p-6">
+      {/* ✅ MODAL SUCCESS */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        title={successModal.title}
+        message={successModal.message}
+        onClose={() => setSuccessModal({ ...successModal, isOpen: false })}
+      />
+
       <h1 className="text-2xl font-bold mb-6">Gestion des élèves</h1>
 
-      {/* FORMULAIRE avec EXACTEMENT le même style que Classes */}
+      {/* FORMULAIRE */}
       <form
         onSubmit={handleCreate}
         className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end bg-white p-6 rounded-lg shadow-md border"
       >
-        {/* UTILISATEUR - Même style */}
+        {/* UTILISATEUR */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Utilisateur lié *
@@ -150,7 +188,7 @@ const filteredStudents = students.filter((student) => {
           </select>
         </div>
 
-        {/* MATRICULE - Même style */}
+        {/* MATRICULE */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Matricule *
@@ -164,7 +202,7 @@ const filteredStudents = students.filter((student) => {
           />
         </div>
 
-        {/* PRENOM - Même style */}
+        {/* PRENOM */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Prénom *
@@ -178,7 +216,7 @@ const filteredStudents = students.filter((student) => {
           />
         </div>
 
-        {/* NOM - Même style */}
+        {/* NOM */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Nom *
@@ -192,7 +230,7 @@ const filteredStudents = students.filter((student) => {
           />
         </div>
 
-        {/* DATE NAISSANCE - Même style */}
+        {/* DATE NAISSANCE */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Date naissance *
@@ -207,7 +245,7 @@ const filteredStudents = students.filter((student) => {
           />
         </div>
 
-        {/* GENRE - Même style */}
+        {/* GENRE */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Genre *
@@ -225,7 +263,7 @@ const filteredStudents = students.filter((student) => {
           </select>
         </div>
 
-        {/* TELEPHONE - Même style */}
+        {/* TELEPHONE */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Téléphone
@@ -238,7 +276,7 @@ const filteredStudents = students.filter((student) => {
           />
         </div>
 
-        {/* CLASSE - Même style EXACT */}
+        {/* CLASSE */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Classe *
@@ -259,7 +297,7 @@ const filteredStudents = students.filter((student) => {
           </select>
         </div>
 
-        {/* ADRESSE & MEDICAL - Span 2 colonnes comme avant */}
+        {/* ADRESSE */}
         <div className="lg:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Adresse
@@ -268,11 +306,11 @@ const filteredStudents = students.filter((student) => {
             name="address"
             value={form.address}
             onChange={handleChange}
-            rows="3"
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
           />
         </div>
 
+        {/* INFOS MEDICALES */}
         <div className="lg:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Infos médicales
@@ -281,12 +319,11 @@ const filteredStudents = students.filter((student) => {
             name="medical_info"
             value={form.medical_info}
             onChange={handleChange}
-            rows="2"
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
           />
         </div>
 
-        {/* BOUTONS - Même style exact */}
+        {/* BOUTONS */}
         <div className="space-x-2 col-span-1 md:col-span-2 lg:col-span-3">
           <button
             type="submit"
@@ -314,86 +351,77 @@ const filteredStudents = students.filter((student) => {
         </div>
       </form>
 
-
       {/* BARRE DE RECHERCHE */}
-     
-
       <div className="mb-4 flex items-center bg-white p-4 rounded-lg shadow-sm border">
-  <div className="relative w-full max-w-md">
-    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-      
-    </span>
-    <input
-      type="text"
-      placeholder="Rechercher par matricule ou nom..."
-      className="pl-10 w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-    />
-  </div>
-  <div className="ml-4 text-sm text-gray-500">
-    {filteredStudents.length} élève(s) trouvé(s)
-  </div>
-</div>
+        <div className="relative w-full max-w-md">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Rechercher par matricule ou nom..."
+            className="pl-10 w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="ml-4 text-sm text-gray-500">
+          {filteredStudents.length} élève(s) trouvé(s)
+        </div>
+      </div>
 
-
-
-
-      {/* TABLE - Inchangée, déjà parfaite */}
+      {/* TABLE */}
       <div className="bg-white rounded-lg shadow-md border overflow-hidden">
-     <table className="w-full">
-  <thead className="bg-gray-50">
-    <tr>
-      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-        ID
-      </th>
-      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-        Matricule
-      </th>
-      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-        Nom complet
-      </th>
-      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-        Classe
-      </th>
-      {/* ← text-center pour Actions */}
-      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-        Actions
-      </th>
-    </tr>
-  </thead>
-  <tbody className="divide-y divide-gray-200">
-   {filteredStudents.map((student) => (
-      <tr key={student.id} className="hover:bg-gray-50">
-        <td className="px-6 py-4 text-sm text-gray-900">{student.id}</td>
-        <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.matricule}</td>
-        <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.full_name}</td>
-        <td className="px-6 py-4 text-sm text-gray-900">
-          <span className="font-medium">{student.class?.name || "-"}</span>
-        </td>
-        
-        {/* ← text-center pour Actions + flex justify-center */}
-        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-          <div className="flex justify-center space-x-2">
-            <button
-              onClick={() => handleEdit(student)}
-              className="text-blue-600 hover:text-blue-900 px-3 py-1 rounded hover:bg-blue-50 transition-colors"
-            >
-              Modifier
-            </button>
-            <button
-              onClick={() => handleDelete(student.id)}
-              className="text-red-600 hover:text-red-900 px-3 py-1 rounded hover:bg-red-50 transition-colors"
-            >
-              Supprimer
-            </button>
-          </div>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Matricule
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Nom complet
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Classe
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredStudents.map((student) => (
+              <tr key={student.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 text-sm text-gray-900">{student.id}</td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.matricule}</td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.full_name}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  <span className="font-medium">{student.class?.name || "-"}</span>
+                </td>
 
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                  <div className="flex justify-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(student)}
+                      className="text-blue-600 hover:text-blue-900 px-3 py-1 rounded hover:bg-blue-50 transition-colors"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => handleDelete(student.id)}
+                      className="text-red-600 hover:text-red-900 px-3 py-1 rounded hover:bg-red-50 transition-colors"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         {students.length === 0 && (
           <div className="px-6 py-12 text-center text-gray-500 text-lg">
