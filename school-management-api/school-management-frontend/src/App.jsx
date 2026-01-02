@@ -3,6 +3,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ClassesPage from "./pages/ClassesPage.jsx";
+import StudentsPage from "./pages/StudentsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 
@@ -16,6 +17,7 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/classes" element={<ClassesPage />} />
+          <Route path="/students" element={<StudentsPage />} />
           {/* tu pourras ajouter /students, /parents, etc. */}
         </Route>
       </Route>
