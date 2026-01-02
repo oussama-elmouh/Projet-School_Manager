@@ -52,12 +52,13 @@ class ClassController extends Controller
         return new ClassResource($schoolClass->load(['principalTeacher', 'students']));
     }
 
-    public function update(UpdateClassRequest $request, SchoolClass $schoolClass)
-    {
-        $schoolClass->update($request->validated());
+  public function update(UpdateClassRequest $request, SchoolClass $schoolClass)
+{
+    $schoolClass->update($request->validated());
 
-        return new ClassResource($schoolClass->load(['principalTeacher', 'students']));
-    }
+    return new ClassResource($schoolClass->load(['principalTeacher', 'students']));
+}
+
 
     public function destroy(SchoolClass $schoolClass)
     {

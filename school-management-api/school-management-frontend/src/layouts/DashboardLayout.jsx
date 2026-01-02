@@ -14,7 +14,7 @@ export default function DashboardLayout() {
   };
   return (
     <div className="flex h-screen bg-gray-100">
-      <aside className="w-64 bg-gradient-to-b from-indigo-600 to-indigo-800 text-white p-6">
+      <aside className="w-64 bg-linear-to-b from-indigo-600 to-indigo-800 text-white p-6">
         <h2 className="text-xl font-bold mb-6">School Admin</h2>
         <nav className="space-y-2 mb-8">
           {menus.map((menu) => (
