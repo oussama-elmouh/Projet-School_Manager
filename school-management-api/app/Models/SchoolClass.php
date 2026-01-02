@@ -33,4 +33,18 @@ class SchoolClass extends Model
     {
         return $this->hasMany(TimeTable::class, 'class_id');
     }
+
+     // ✅ NOUVEAU: Relation avec Professeurs
+    public function teachers()
+    {
+        return $this->belongsToMany(Teacher::class, 'teacher_school_class', 'class_id', 'teacher_id')
+                    ->withPivot('subject')
+                    ->withTimestamps();
+    }
+
+    // Accessor: Compter profs
+    public function getTeachersCountAttribute()
+    {
+        return $this->teachers()->count();
+    }
 }

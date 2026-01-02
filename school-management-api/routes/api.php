@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 // Controllers
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\StudentController;
+use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\ParentController;
 use App\Http\Controllers\Api\ClassController;
 use App\Http\Controllers\Api\SubjectController;
@@ -54,20 +55,21 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::patch('/{user}/status', [UserController::class, 'updateStatus']);
     });
 
-    // ============================================
-    // GESTION DES ÉLÈVES
-    // ============================================
-    Route::prefix('students')->group(function () {
-        Route::get('/', [StudentController::class, 'index']);
-        Route::post('/', [StudentController::class, 'store']);
-        Route::get('/{student}', [StudentController::class, 'show']);
-        Route::patch('/{student}', [StudentController::class, 'update']);
-        Route::delete('/{student}', [StudentController::class, 'destroy']);
+  // ============================================
+// GESTION DES PROFESSEURS
+// ============================================
+    Route::prefix('teachers')->group(function () {
+        Route::get('/', [TeacherController::class, 'index']);
+        Route::post('/', [TeacherController::class, 'store']);
+        Route::get('/{teacher}', [TeacherController::class, 'show']);
+        Route::patch('/{teacher}', [TeacherController::class, 'update']);
+        Route::delete('/{teacher}', [TeacherController::class, 'destroy']);
         
-        // Relations parent-élève
-        Route::post('/{student}/parents', [StudentController::class, 'attachParent']);
-        Route::delete('/{student}/parents', [StudentController::class, 'detachParent']);
-    });
+        // Relations prof ↔ classes
+        Route::post('/{teacher}/assign-class', [TeacherController::class, 'assignClass']);
+        Route::delete('/{teacher}/remove-class', [TeacherController::class, 'removeClass']);
+    }); 
+
 
     // ============================================
     // GESTION DES PARENTS
@@ -93,7 +95,30 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         // Élèves d'une classe
         Route::get('/{schoolClass}/students', [ClassController::class, 'students']);
     });
+// ============================================
+    // GESTION DES ÉLÈVES
+    // ============================================
+    Route::prefix('students')->group(function () {
+        Route::get('/', [StudentController::class, 'index']);
+        Route::post('/', [StudentController::class, 'store']);
+        Route::get('/{student}', [StudentController::class, 'show']);
+        Route::patch('/{student}', [StudentController::class, 'update']);
+        Route::delete('/{student}', [StudentController::class, 'destroy']);
+        
+        // Relations parent-élève
+        Route::post('/{student}/parents', [StudentController::class, 'attachParent']);
+        Route::delete('/{student}/parents', [StudentController::class, 'detachParent']);
+    });
 
+    // ============================================
+    // GESTION DES Professeur
+    // ============================================
+
+    Route::prefix('auth:sanctum')->group(function () {
+    Route::apiResource('teachers', TeacherController::class);
+    Route::post('teachers/{teacher}/assign-class', [TeacherController::class, 'assignClass']);
+    Route::delete('teachers/{teacher}/remove-class', [TeacherController::class, 'removeClass']);
+});
     // ============================================
     // GESTION DES MATIÈRES
     // ============================================

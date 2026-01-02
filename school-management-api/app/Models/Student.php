@@ -18,6 +18,8 @@ class Student extends Model
         'date_of_birth' => 'date',
     ];
 
+    
+
     // Relations
     public function user()
     {

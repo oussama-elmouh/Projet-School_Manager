@@ -20,6 +20,7 @@ export default function StudentsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -104,6 +105,21 @@ export default function StudentsPage() {
 
   if (loading) return <div className="p-6">Chargement...</div>;
 
+
+
+
+const filteredStudents = students.filter((student) => {
+  const search = searchTerm.toLowerCase();
+  return (
+    student.matricule?.toLowerCase().includes(search) ||
+    student.first_name?.toLowerCase().includes(search) ||
+    student.last_name?.toLowerCase().includes(search) ||
+    student.full_name?.toLowerCase().includes(search)
+  );
+});
+
+ 
+ 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Gestion des élèves</h1>
@@ -244,15 +260,15 @@ export default function StudentsPage() {
         </div>
 
         {/* ADRESSE & MEDICAL - Span 2 colonnes comme avant */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Adresse
           </label>
-          <textarea
+          <input
             name="address"
             value={form.address}
             onChange={handleChange}
-            rows="2"
+            rows="3"
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
           />
         </div>
@@ -261,7 +277,7 @@ export default function StudentsPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Infos médicales
           </label>
-          <textarea
+          <input
             name="medical_info"
             value={form.medical_info}
             onChange={handleChange}
@@ -298,6 +314,31 @@ export default function StudentsPage() {
         </div>
       </form>
 
+
+      {/* BARRE DE RECHERCHE */}
+     
+
+      <div className="mb-4 flex items-center bg-white p-4 rounded-lg shadow-sm border">
+  <div className="relative w-full max-w-md">
+    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+      
+    </span>
+    <input
+      type="text"
+      placeholder="Rechercher par matricule ou nom..."
+      className="pl-10 w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+  </div>
+  <div className="ml-4 text-sm text-gray-500">
+    {filteredStudents.length} élève(s) trouvé(s)
+  </div>
+</div>
+
+
+
+
       {/* TABLE - Inchangée, déjà parfaite */}
       <div className="bg-white rounded-lg shadow-md border overflow-hidden">
      <table className="w-full">
@@ -322,7 +363,7 @@ export default function StudentsPage() {
     </tr>
   </thead>
   <tbody className="divide-y divide-gray-200">
-    {students.map((student) => (
+   {filteredStudents.map((student) => (
       <tr key={student.id} className="hover:bg-gray-50">
         <td className="px-6 py-4 text-sm text-gray-900">{student.id}</td>
         <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.matricule}</td>

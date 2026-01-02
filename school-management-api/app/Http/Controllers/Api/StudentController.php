@@ -18,7 +18,6 @@ class StudentController extends Controller
 
     public function index(Request $request)
     {
-         $students = Student::with('currentClass')->get();
         $query = Student::with(['user', 'currentClass', 'parents']);
 
         if ($request->has('class_id')) {
