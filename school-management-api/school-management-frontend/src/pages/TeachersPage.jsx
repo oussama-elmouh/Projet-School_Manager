@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
-
+import SuccessModal from "../components/SuccessModal";
 export default function TeachersPage() {
   const [teachers, setTeachers] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -18,7 +18,11 @@ export default function TeachersPage() {
   });
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
+ const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: "",
+    message: ""
+  });
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -68,6 +72,7 @@ export default function TeachersPage() {
 const handleCreate = async (e) => {
   e.preventDefault();
   setSaving(true);
+
   try {
     const payload = {
       user_id: form.user_id,
@@ -75,63 +80,51 @@ const handleCreate = async (e) => {
       specialization: form.specialization,
       phone: form.phone,
       bio: form.bio,
-      status: form.status
+      status: form.status,
+      classes: form.classes   // ✅ LIGNE MANQUANTE
     };
 
-    const { data } = editingId 
+    const { data } = editingId
       ? await api.patch(`/teachers/${editingId}`, payload)
       : await api.post('/teachers', payload);
 
-    let newTeacher = data.data || data;
+    const newTeacher = data.data || data;
 
-    // ✅ Assigner classes
-    if (form.classes.length > 0) {
-      for (const cls of form.classes) {
-        if (cls.class_id && cls.subject) {
-          try {
-            await api.post(`/teachers/${newTeacher.id}/assign-class`, {
-              class_id: cls.class_id,
-              subject: cls.subject
-            });
-          } catch (err) {
-            console.warn(`Classe ${cls.class_id} non assignée:`, err.response?.data?.message);
-          }
-        }
-      }
-
-      // ✅ RAFRAÎCHIR données du prof après assignation
-      const { data: refreshedData } = await api.get(`/teachers/${newTeacher.id}`);
-      newTeacher = refreshedData.data || refreshedData;
-    }
-
-    // ✅ UPDATE le tableau avec données fraîches
     if (editingId) {
-      setTeachers(prev => prev.map(t => t.id === editingId ? newTeacher : t));
+      setTeachers(prev =>
+        prev.map(t => (t.id === editingId ? newTeacher : t))
+      );
       setEditingId(null);
     } else {
       setTeachers(prev => [newTeacher, ...prev]);
     }
 
-    // Reset form
-    setForm({
-      user_id: "", email: "", specialization: "", phone: "",
-      bio: "", status: "ACTIVE", classes: []
+    setSuccessModal({
+      isOpen: true,
+      title: "✅ Succès",
+      message: "Professeur enregistré avec succès"
     });
 
-    // ✅ Optionnel: recharger TOUT le tableau
-     await fetchData();
- alert('✅ Professeur ' + (editingId ? 'modifié' : 'ajouté') + ' avec succès!');
+    setForm({
+      user_id: "",
+      email: "",
+      specialization: "",
+      phone: "",
+      bio: "",
+      status: "ACTIVE",
+      classes: []
+    });
+
   } catch (err) {
-    const errors = err.response?.data?.errors;
-    const message = errors 
-      ? Object.values(errors).flat().join('\n') 
-      : err.response?.data?.message || err.message || "Erreur serveur";
-    alert(message);
-    console.error('Erreur handleCreate:', err);
+    alert(err.response?.data?.message || "Erreur serveur");
+    console.error(err);
   } finally {
     setSaving(false);
   }
 };
+
+
+
 
 
 
@@ -172,7 +165,16 @@ const filteredTeachers = teachers.filter((teacher) => {
   if (loading) return <div className="p-6">Chargement...</div>;
 
   return (
-    <div className="p-6">
+     <div className="p-6">
+    {/* ✅ MODAL SUCCESS */}
+    <SuccessModal
+      isOpen={successModal.isOpen}
+      title={successModal.title}
+      message={successModal.message}
+      onClose={() => setSuccessModal({ ...successModal, isOpen: false })}
+    />
+  
+      
       <h1 className="text-2xl font-bold mb-6">Gestion des professeurs</h1>
 
       {/* FORMULAIRE */}
