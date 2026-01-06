@@ -12,6 +12,8 @@ export default function DashboardLayout() {
     localStorage.removeItem("auth_user");
     navigate("/login");
   };
+  console.log("current role:", user.role, "menus:", menus);
+
   return (
     <div className="flex h-screen bg-gray-100">
       <aside className="w-64 bg-linear-to-b from-indigo-600 to-indigo-800 text-white p-6">

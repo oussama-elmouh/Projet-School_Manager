@@ -27,7 +27,7 @@ export default function AdminDashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-800">
-          Tableau de bord ADMIN
+           
         </h1>
         <AdminNotifications />
       </div>

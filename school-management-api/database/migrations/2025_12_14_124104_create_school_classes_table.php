@@ -15,7 +15,7 @@ return new class extends Migration
             $table->integer('capacity')->default(30);
             $table->foreignId('principal_teacher_id')->nullable()
                   ->constrained('users')->onDelete('set null');
-            $table->string('academic_year'); // ex: "2024-2025"
+            $table->string('academic_year')->nullable();  // Rend le champ facultatif // ex: "2024-2025"
             $table->timestamps();
             $table->unique(['name', 'academic_year']);
         });

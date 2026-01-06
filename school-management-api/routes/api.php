@@ -21,7 +21,7 @@ use App\Http\Controllers\Api\CantineController;
 use App\Http\Controllers\Api\TransportController;
 use App\Http\Controllers\Api\DisciplineController;
 use App\Http\Controllers\Api\AdminAlertController;
-
+use App\Http\Controllers\Api\TeacherDashboardController;
 
 
 /*
@@ -70,7 +70,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('teachers', TeacherController::class);
         Route::post('teachers/{teacher}/assign-class', [TeacherController::class, 'assignClass']);
         Route::delete('teachers/{teacher}/remove-class', [TeacherController::class, 'removeClass']);
-
+        Route::get('/teacher/dashboard', [TeacherDashboardController::class, 'index']);
         // ===============================
         // STUDENTS
         // ===============================

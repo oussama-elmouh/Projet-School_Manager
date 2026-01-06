@@ -10,16 +10,21 @@ return new class extends Migration
     {
         Schema::create('absences', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained()->onDelete('cascade');
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->date('absence_date');
-            $table->enum('period', ['MORNING', 'AFTERNOON', 'FULL_DAY']);
-            $table->text('reason')->nullable();
-            $table->boolean('justified')->default(false);
-            $table->text('justification')->nullable();
-            $table->foreignId('recorded_by')->nullable()
-                  ->constrained('users')->onDelete('set null');
+            $table->enum('period', ['MORNING', 'AFTERNOON', 'FULL_DAY'])->default('FULL_DAY');
+            $table->text('reason')->nullable(); // Motif de l'absence
+            $table->boolean('justified')->default(false); // Est-elle justifiée?
+            $table->text('justification')->nullable(); // Preuve/Document
+            $table->foreignId('recorded_by')->constrained('users')->onDelete('cascade'); // Prof qui a enregistré
             $table->timestamps();
-            $table->index(['student_id', 'absence_date']);
+            
+            // Pour éviter les doublons
+            $table->unique(['student_id', 'absence_date', 'period']);
+            
+            // Index pour les recherches rapides
+            $table->index('absence_date');
+            $table->index('student_id');
         });
     }
 

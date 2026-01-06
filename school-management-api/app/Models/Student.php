@@ -41,10 +41,35 @@ class Student extends Model
         return $this->belongsToMany(ParentModel::class, 'parent_student');
     }
 
-    public function absences()
-    {
-        return $this->hasMany(Absence::class);
-    }
+    // Relation avec les absences
+public function absences()
+{
+    return $this->hasMany(Absence::class);
+}
+
+// Accessors pour stats
+public function getAbsencesCountAttribute()
+{
+    return $this->absences()->count();
+}
+
+public function getAbsencesThisMonthAttribute()
+{
+    return $this->absences()
+        ->whereMonth('absence_date', now()->month)
+        ->whereYear('absence_date', now()->year)
+        ->count();
+}
+
+public function getJustifiedAbsencesAttribute()
+{
+    return $this->absences()->where('justified', true)->count();
+}
+
+public function getUnjustifiedAbsencesAttribute()
+{
+    return $this->absences()->where('justified', false)->count();
+}
 
     public function grades()
     {

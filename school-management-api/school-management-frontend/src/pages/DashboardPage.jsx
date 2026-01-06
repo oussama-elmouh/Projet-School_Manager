@@ -1,5 +1,6 @@
 import AdminDashboard from "../components/dashboards/AdminDashboard";
-
+ 
+import TeacherDashboard from "../components/dashboards/TeacherDashboard";
 
 export default function DashboardPage() {
   const user = JSON.parse(localStorage.getItem("auth_user") || "{}");
@@ -12,6 +13,7 @@ export default function DashboardPage() {
       </h1>
 
       {role === "ADMIN" && <AdminDashboard />}
+        {role === "TEACHER" && <TeacherDashboard />}
       {/* plus tard : TeacherDashboard, StudentDashboard, etc. */}
     </div>
   );

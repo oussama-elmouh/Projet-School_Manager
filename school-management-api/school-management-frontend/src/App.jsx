@@ -7,6 +7,8 @@ import StudentsPage from "./pages/StudentsPage.jsx";
 import TeachersPage from "./pages/TeachersPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
+ 
+import TeacherClassStudentsPage from "./pages/teacher/TeacherClassStudentsPage.jsx";
 
 function App() {
   return (
@@ -20,6 +22,9 @@ function App() {
           <Route path="/classes" element={<ClassesPage />} />
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/teachers" element={<TeachersPage />} />
+          <Route path="/teacher/classes/:classId/students" element={<TeacherClassStudentsPage />} />
+
+
           {/* tu pourras ajouter /students, /parents, etc. */}
         </Route>
       </Route>
