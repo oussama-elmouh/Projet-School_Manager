@@ -7,7 +7,7 @@ School Management System est une application web de gestion scolaire basée sur 
 
 - **Backend** : API REST développée avec Laravel
     
-- **Frontend** : Application web développée avec React et Vite
+- **Frontend** : Application web développée avec React et Vite 
     
 
 Le système permet de gérer l’ensemble des processus scolaires : utilisateurs, classes, élèves, parents, notes, absences, facturation, cantine, transport et messagerie interne.
