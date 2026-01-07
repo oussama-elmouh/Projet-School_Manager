@@ -271,7 +271,7 @@ Table responsive Tailwind + boutons alignés
 PATCH au lieu de PUT + Policy autorisée
 
 ---
-
+JUST AN EDIT
 
 This project is intended for **academic and educational purposes**.  
 You may add an open-source license (e.g. MIT) if you plan to publish or reuse the code.
