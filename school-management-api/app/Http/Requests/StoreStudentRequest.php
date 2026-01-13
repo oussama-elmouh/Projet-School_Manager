@@ -11,20 +11,27 @@ class StoreStudentRequest extends FormRequest
         return auth()->check() && auth()->user()->role === 'ADMIN';
     }
 
-    public function rules(): array
-    {
-        return [
-            'user_id' => 'required|exists:users,id|unique:students',
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'date_of_birth' => 'required|date|before:today',
-            'gender' => 'nullable|in:M,F,OTHER',
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:20',
-            'medical_info' => 'nullable|string',
-            'class_id' => 'nullable|exists:school_classes,id',
-        ];
-    }
+   public function rules(): array
+{
+    return [
+        'user_id' => 'nullable|exists:users,id',
+        'email' => 'nullable|email|unique:users,email',
+
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'date_of_birth' => 'required|date',
+        'gender' => 'required|in:M,F',
+
+        'phone' => 'nullable|string|max:20',
+        'address' => 'nullable|string|max:255',
+        'medical_info' => 'nullable|string',
+
+        // important: selon ton modèle, c'est class_id ou current_class_id
+        'class_id' => 'required|exists:school_classes,id',
+        
+    ];
+}
+
 
     public function messages(): array
     {

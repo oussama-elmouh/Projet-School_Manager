@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../api/client";
 import SuccessModal from "../components/SuccessModal";
 
@@ -6,7 +6,14 @@ export default function StudentsPage() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [users, setUsers] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState("");
+
   const [form, setForm] = useState({
     user_id: "",
     matricule: "",
@@ -17,32 +24,49 @@ export default function StudentsPage() {
     address: "",
     phone: "",
     medical_info: "",
-    class_id: ""
+    class_id: "",
   });
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ STATE POUR MODAL SUCCESS
   const [successModal, setSuccessModal] = useState({
     isOpen: false,
-    title: '',
-    message: ''
+    title: "",
+    message: "",
   });
+
+  const resetForm = () => {
+    setEditingId(null);
+    setError("");
+    setForm({
+      user_id: "",
+      matricule: "",
+      first_name: "",
+      last_name: "",
+      date_of_birth: "",
+      gender: "",
+      address: "",
+      phone: "",
+      medical_info: "",
+      class_id: "",
+    });
+  };
 
   const fetchData = async () => {
     setLoading(true);
+    setError("");
+
     try {
       const [studentsRes, classesRes, usersRes] = await Promise.all([
         api.get("/students"),
         api.get("/classes"),
-        api.get("/users")
+        api.get("/users"),
       ]);
-      setStudents(studentsRes.data.data || studentsRes.data);
-      setClasses(classesRes.data.data || classesRes.data);
-      setUsers(usersRes.data.data || usersRes.data);
+
+      setStudents(studentsRes.data?.data || studentsRes.data || []);
+      setClasses(classesRes.data?.data || classesRes.data || []);
+      setUsers(usersRes.data?.data || usersRes.data || []);
     } catch (err) {
       console.error("Erreur chargement", err);
+      setError("Erreur lors du chargement des données.");
     } finally {
       setLoading(false);
     }
@@ -53,118 +77,149 @@ export default function StudentsPage() {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCreate = async (e) => {
+  const studentDisplayName = (s) =>
+    s?.full_name ||
+    `${s?.first_name || ""} ${s?.last_name || ""}`.trim() ||
+    "Élève";
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setError("");
+
     try {
       const endpoint = editingId ? `/students/${editingId}` : "/students";
-      const method = editingId ? api.patch : api.post;
+      const method = editingId ? api.put : api.post; // ✅ PUT > PATCH
+
       const { data } = await method(endpoint, form);
-      const newStudent = data.data || data;
+      const newStudent = data?.data || data;
 
       if (editingId) {
-        setStudents(prev => prev.map(s => s.id === editingId ? newStudent : s));
-        setEditingId(null);
-        
-        // ✅ AFFICHER MODAL SUCCESS (MODIFICATION)
+        setStudents((prev) =>
+          prev.map((s) => (s.id === editingId ? { ...s, ...newStudent } : s))
+        );
+
         setSuccessModal({
           isOpen: true,
-          title: '✅ Élève modifié!',
-          message: `${newStudent.full_name || newStudent.first_name + ' ' + newStudent.last_name} a été modifié avec succès.`
+          title: "✅ Élève modifié !",
+          message: `${studentDisplayName(newStudent)} a été modifié avec succès.`,
         });
       } else {
-        setStudents(prev => [newStudent, ...prev]);
-        
-        // ✅ AFFICHER MODAL SUCCESS (AJOUT)
+        setStudents((prev) => [newStudent, ...prev]);
         setSuccessModal({
           isOpen: true,
-          title: '✅ Élève ajouté!',
-          message: `${newStudent.full_name || newStudent.first_name + ' ' + newStudent.last_name} a été ajouté à la base de données.`
+          title: "✅ Élève ajouté !",
+          message: `${studentDisplayName(newStudent)} a été ajouté à la base de données.`,
         });
       }
 
-      // Reset form
-      setForm({
-        user_id: "", matricule: "", first_name: "", last_name: "",
-        date_of_birth: "", gender: "", address: "", phone: "",
-        medical_info: "", class_id: ""
-      });
+      resetForm();
     } catch (err) {
+      console.log("CREATE/UPDATE ERROR:", err.response?.data || err);
+
       const errors = err.response?.data?.errors;
-      alert(errors ? Object.values(errors).flat().join('\n') : "Erreur");
+      if (errors) {
+        setError(Object.values(errors).flat().join("\n"));
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Erreur lors de la création / modification."
+        );
+      }
     } finally {
       setSaving(false);
     }
   };
 
- const handleEdit = (student) => {
-  setForm({
-    // ✅ Si user est un objet, prendre l'ID
-    user_id: student.user?.id ? String(student.user.id) : (student.user_id ? String(student.user_id) : ""),
-    matricule: student.matricule || "",
-    first_name: student.first_name || "",
-    last_name: student.last_name || "",
-    date_of_birth: student.date_of_birth || "",
-    gender: student.gender || "",
-    address: student.address || "",
-    phone: student.phone || "",
-    medical_info: student.medical_info || "",
-    // ✅ Si class est un objet, prendre l'ID
-    class_id: student.class?.id ? String(student.class.id) : (student.class_id ? String(student.class_id) : "")
-  });
-  setEditingId(student.id);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+  const handleEdit = (student) => {
+    setError("");
+    setForm({
+      user_id: student.user?.id
+        ? String(student.user.id)
+        : student.user_id
+        ? String(student.user_id)
+        : "",
+      matricule: student.matricule || "",
+      first_name: student.first_name || "",
+      last_name: student.last_name || "",
+      date_of_birth: student.date_of_birth || "",
+      gender: student.gender || "",
+      address: student.address || "",
+      phone: student.phone || "",
+      medical_info: student.medical_info || "",
+      class_id: student.class?.id
+        ? String(student.class.id)
+        : student.class_id
+        ? String(student.class_id)
+        : "",
+    });
 
+    setEditingId(student.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer cet élève ?")) return;
+
     try {
-      const deletedStudent = students.find(s => s.id === id);
+      const deletedStudent = students.find((s) => s.id === id);
       await api.delete(`/students/${id}`);
-      setStudents(prev => prev.filter(s => s.id !== id));
-      
-      // ✅ AFFICHER MODAL SUCCESS (SUPPRESSION)
+      setStudents((prev) => prev.filter((s) => s.id !== id));
+
       setSuccessModal({
         isOpen: true,
-        title: '✅ Élève supprimé!',
-        message: `${deletedStudent.full_name || deletedStudent.first_name + ' ' + deletedStudent.last_name} a été supprimé de la base de données.`
+        title: "✅ Élève supprimé !",
+        message: `${studentDisplayName(deletedStudent)} a été supprimé de la base de données.`,
       });
     } catch (err) {
-      alert("Erreur suppression");
+      console.error("Erreur suppression", err);
+      setError("Erreur lors de la suppression.");
     }
   };
 
-  if (loading) return <div className="p-6">Chargement...</div>;
+  const filteredStudents = useMemo(() => {
+    const search = searchTerm.trim().toLowerCase();
+    if (!search) return students;
 
-  const filteredStudents = students.filter((student) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      student.matricule?.toLowerCase().includes(search) ||
-      student.first_name?.toLowerCase().includes(search) ||
-      student.last_name?.toLowerCase().includes(search) ||
-      student.full_name?.toLowerCase().includes(search)
-    );
-  });
+    return students.filter((student) => {
+      const fullName = studentDisplayName(student).toLowerCase();
+      return (
+        (student.matricule || "").toLowerCase().includes(search) ||
+        (student.first_name || "").toLowerCase().includes(search) ||
+        (student.last_name || "").toLowerCase().includes(search) ||
+        fullName.includes(search)
+      );
+    });
+  }, [students, searchTerm]);
+
+  if (loading) return <div className="p-6">Chargement...</div>;
 
   return (
     <div className="p-6">
-      {/* ✅ MODAL SUCCESS */}
       <SuccessModal
         isOpen={successModal.isOpen}
         title={successModal.title}
         message={successModal.message}
-        onClose={() => setSuccessModal({ ...successModal, isOpen: false })}
+        onClose={() => setSuccessModal((p) => ({ ...p, isOpen: false }))}
       />
 
-      <h1 className="text-2xl font-bold mb-6">Gestion des élèves</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Gestion des élèves</h1>
+      </div>
 
-      {/* FORMULAIRE */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded whitespace-pre-line">
+          {error}
+        </div>
+      )}
+
+      {/* FORM */}
       <form
-        onSubmit={handleCreate}
+        onSubmit={handleSubmit}
         className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end bg-white p-6 rounded-lg shadow-md border"
       >
         {/* UTILISATEUR */}
@@ -177,7 +232,7 @@ export default function StudentsPage() {
             value={form.user_id}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
+            
           >
             <option value="">Sélectionner un utilisateur</option>
             {users.map((user) => (
@@ -306,7 +361,7 @@ export default function StudentsPage() {
             name="address"
             value={form.address}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -319,11 +374,11 @@ export default function StudentsPage() {
             name="medical_info"
             value={form.medical_info}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
-        {/* BOUTONS */}
+        {/* BUTTONS */}
         <div className="space-x-2 col-span-1 md:col-span-2 lg:col-span-3">
           <button
             type="submit"
@@ -332,17 +387,11 @@ export default function StudentsPage() {
           >
             {saving ? "Enregistrement..." : editingId ? "Modifier" : "Ajouter"}
           </button>
+
           {editingId && (
             <button
               type="button"
-              onClick={() => {
-                setEditingId(null);
-                setForm({
-                  user_id: "", matricule: "", first_name: "", last_name: "",
-                  date_of_birth: "", gender: "", address: "", phone: "",
-                  medical_info: "", class_id: ""
-                });
-              }}
+              onClick={resetForm}
               className="px-6 py-2 bg-gray-500 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors"
             >
               Annuler
@@ -351,7 +400,7 @@ export default function StudentsPage() {
         </div>
       </form>
 
-      {/* BARRE DE RECHERCHE */}
+      {/* SEARCH */}
       <div className="mb-4 flex items-center bg-white p-4 rounded-lg shadow-sm border">
         <div className="relative w-full max-w-md">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
@@ -392,14 +441,23 @@ export default function StudentsPage() {
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-200">
             {filteredStudents.map((student) => (
               <tr key={student.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-900">{student.id}</td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.matricule}</td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.full_name}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">
-                  <span className="font-medium">{student.class?.name || "-"}</span>
+                  {student.id}
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  {student.matricule}
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  {studentDisplayName(student)}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  <span className="font-medium">
+                    {student.class?.name || "-"}
+                  </span>
                 </td>
 
                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
@@ -423,9 +481,10 @@ export default function StudentsPage() {
           </tbody>
         </table>
 
-        {students.length === 0 && (
+        {/* ✅ Empty state should be filteredStudents */}
+        {filteredStudents.length === 0 && (
           <div className="px-6 py-12 text-center text-gray-500 text-lg">
-            Aucun élève trouvé. Ajoutez-en un ci-dessus.
+            Aucun élève trouvé.
           </div>
         )}
       </div>

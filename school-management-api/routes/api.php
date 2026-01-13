@@ -81,34 +81,62 @@ Route::prefix('v1')->group(function () {
         // ===============================
         // CLASSES
         // ===============================
-        Route::apiResource('classes', ClassController::class);
-        Route::get('classes/{schoolClass}/students', [ClassController::class, 'students']);
+ Route::get('classes/{schoolClass}/students', [ClassController::class, 'students']);
+
+Route::apiResource('classes', ClassController::class)
+    ->parameters(['classes' => 'schoolClass']);
+
 
         // ===============================
         // SUBJECTS
         // ===============================
         Route::apiResource('subjects', SubjectController::class);
+     
 
         // ===============================
         // ABSENCES
         // ===============================
-        Route::apiResource('absences', AbsenceController::class);
-        Route::patch('absences/{absence}/justify', [AbsenceController::class, 'justify']);
-        Route::get('absences/student/report', [AbsenceController::class, 'studentReport']);
+Route::apiResource('absences', AbsenceController::class);
+
+Route::get('absences/student/{studentId}', [AbsenceController::class, 'getStudentAbsences']);
+Route::get('absences/class/{classId}/date/{date}', [AbsenceController::class, 'getByClassAndDate']);
+Route::get('absences/report/student/{studentId}', [AbsenceController::class, 'reportStudent']);
+Route::apiResource('school-classes', \App\Http\Controllers\Api\SchoolClassController::class);
+    Route::apiResource('time-tables', \App\Http\Controllers\Api\TimeTableController::class);
+    
 
         // ===============================
-        // GRADES
+        // emploi du temps
         // ===============================
-        Route::apiResource('grades', GradeController::class);
-        Route::get('grades/student/average', [GradeController::class, 'studentAverage']);
-        Route::get('grades/student/bulletin', [GradeController::class, 'bulletin']);
+ Route::apiResource('school-classes', \App\Http\Controllers\Api\SchoolClassController::class)
+    ->only(['index', 'show']);
+
+// ===============================
+// EMPLOI DU TEMPS
+// ===============================
+Route::apiResource('time-tables', \App\Http\Controllers\Api\TimeTableController::class);
+
+// Optionnel si tu veux garder ton endpoint spécifique byClass
+Route::get('time-tables/by-class', [\App\Http\Controllers\Api\TimeTableController::class, 'byClass']);
+// ===============================
+// GRADES
+// ===============================
+Route::apiResource('grades', GradeController::class);
+Route::get('grades/student/{studentId}', [GradeController::class, 'studentGrades']);
+Route::get('grades/subject/{subjectId}', [GradeController::class, 'subjectGradebook']);
+Route::post('grades/bulk', [GradeController::class, 'bulkStore']);
+Route::get('grades/student/{studentId}/report', [GradeController::class, 'studentReport']);
 
         // ===============================
         // INVOICES
         // ===============================
-        Route::apiResource('invoices', InvoiceController::class);
-        Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay']);
-        Route::get('invoices/student/report', [InvoiceController::class, 'studentReport']);
+Route::get('invoices/monthly-grid', [InvoiceController::class, 'monthlyGrid']);
+Route::post('invoices/monthly-generate', [InvoiceController::class, 'monthlyGenerate']);
+
+// tes routes existantes
+Route::apiResource('invoices', InvoiceController::class);
+Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay']);
+Route::get('invoices/student/report', [InvoiceController::class, 'studentReport']);
 
         // ===============================
         // MESSAGES

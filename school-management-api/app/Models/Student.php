@@ -72,9 +72,22 @@ public function getUnjustifiedAbsencesAttribute()
 }
 
     public function grades()
-    {
-        return $this->hasMany(Grade::class);
-    }
+{
+    return $this->hasMany(Grade::class);
+}
+
+// Accesseur pour la moyenne générale
+public function getAverageAttribute()
+{
+    $grades = $this->grades;
+    if ($grades->isEmpty()) return 0;
+
+    $totalPoints = $grades->sum('score');
+    $totalPossible = $grades->sum('total_score');
+
+    return $totalPossible > 0 ? round(($totalPoints / $totalPossible) * 100, 2) : 0;
+}
+
 
     public function invoices()
     {
@@ -111,4 +124,5 @@ public function getUnjustifiedAbsencesAttribute()
     {
         return $this->date_of_birth->diffInYears(now());
     }
+    
 }

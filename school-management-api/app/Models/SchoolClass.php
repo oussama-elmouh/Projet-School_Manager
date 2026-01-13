@@ -47,4 +47,9 @@ class SchoolClass extends Model
     {
         return $this->teachers()->count();
     }
+    public function grades()
+{
+    return $this->hasMany(Grade::class, 'class_id');
+}
+
 }

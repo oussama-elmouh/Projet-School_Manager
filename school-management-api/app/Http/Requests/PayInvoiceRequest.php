@@ -8,15 +8,14 @@ class PayInvoiceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && in_array(auth()->user()->role, ['ADMIN', 'DIRECTOR', 'PARENT']);
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            'payment_method' => 'required|in:CHEQUE,BANK_TRANSFER,CASH,CARD',
-            'payment_reference' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:CASH,CHEQUE,BANK_TRANSFER',
+            'payment_reference' => 'nullable|string|max:255',
         ];
     }
 }

@@ -30,4 +30,9 @@ class Teacher extends Model
     {
         return $this->user?->name ?? 'Unknown';
     }
+    public function grades()
+{
+    return $this->hasMany(Grade::class);
+}
+
 }

@@ -1,4 +1,5 @@
 <?php
+// app/Models/Invoice.php
 
 namespace App\Models;
 
@@ -10,8 +11,17 @@ class Invoice extends Model
     use HasFactory;
 
     protected $fillable = [
-        'student_id', 'invoice_number', 'type', 'amount', 'status',
-        'due_date', 'paid_date', 'payment_method', 'payment_reference', 'notes'
+        'student_id',
+        'invoice_number',
+        'type',
+        'billing_month',      // ✅ NEW
+        'amount',
+        'status',
+        'due_date',
+        'paid_date',
+        'payment_method',
+        'payment_reference',
+        'notes',
     ];
 
     protected $casts = [
@@ -20,13 +30,11 @@ class Invoice extends Model
         'paid_date' => 'date',
     ];
 
-    // Relations
     public function student()
     {
-        return $this->belongsTo(Student::class);
+        return $this->belongsTo(\App\Models\Student::class);
     }
 
-    // Scopes
     public function scopePending($query)
     {
         return $query->where('status', 'PENDING');
@@ -40,9 +48,9 @@ class Invoice extends Model
     public function scopeOverdue($query)
     {
         return $query->where('status', 'OVERDUE')
-                     ->orWhere(function ($q) {
-                         $q->where('status', 'PENDING')
-                           ->whereDate('due_date', '<', now());
-                     });
+            ->orWhere(function ($q) {
+                $q->where('status', 'PENDING')
+                  ->whereDate('due_date', '<', now());
+            });
     }
 }

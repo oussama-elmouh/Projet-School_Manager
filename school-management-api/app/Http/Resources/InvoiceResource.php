@@ -1,4 +1,5 @@
 <?php
+// app/Http/Resources/InvoiceResource.php
 
 namespace App\Http\Resources;
 
@@ -14,9 +15,10 @@ class InvoiceResource extends JsonResource
             'invoice_number' => $this->invoice_number,
             'student' => new StudentResource($this->whenLoaded('student')),
             'type' => $this->type,
+            'billing_month' => $this->billing_month, // ✅ NEW (YYYY-MM)
             'amount' => $this->amount,
             'status' => $this->status,
-            'due_date' => $this->due_date->format('Y-m-d'),
+            'due_date' => $this->due_date?->format('Y-m-d'),
             'paid_date' => $this->paid_date?->format('Y-m-d'),
             'payment_method' => $this->payment_method,
             'payment_reference' => $this->payment_reference,

@@ -80,7 +80,7 @@ class ClassController extends Controller
         return response()->json([
             'class' => new ClassResource($schoolClass),
             'students' => \App\Http\Resources\StudentResource::collection(
-                $schoolClass->students()->paginate(15)
+                $schoolClass->students()->paginate(100)
             ),
         ]);
     }
